@@ -1,0 +1,129 @@
+---
+title: "PHP 2514 HW 4"
+author: "Blain Morin"
+date: "April 3, 2018"
+output: html_document
+---
+
+#Question 1
+
+##1a.)
+
+```{r, warning=FALSE, message=FALSE}
+
+###Import data and change the sex, couples, women_alone to factors
+
+risky = read_csv("risky_behaviors.csv")
+
+risky$sex = factor(risky$sex)
+risky$couples = factor(risky$couples)
+risky$women_alone = factor(risky$women_alone)
+risky$fupacts = round(risky$fupacts)
+risky$bs_hiv = factor(risky$bs_hiv)
+
+
+```
+
+We start by regressing follow-up acts on the treatment groups:
+
+```{r}
+
+library(sjPlot)
+
+###Poisson regression with women only
+
+attach(risky)
+
+reg.1a = glm(fupacts ~ couples + women_alone, family = poisson)
+
+sjt.glm(reg.1a)
+
+detach(risky)
+
+```
+
+The regression results above display the incident rate ratios for the treatment groups. Compared to the control group, couples that recieved conseling had .72 times the risk of having unprotected sex. Moreover, when women alone recieved counseling, couples had .56 the risk of having unprotected sex compared to the control group. Both groups were significant at the .05 level. 
+
+Next, we check the model fit.
+
+First, we examine the residual plot:
+
+```{r}
+
+plot(resid(reg.1a))
+
+```
+
+We see that the points are not randomly scattered about the zero line: there are many points above the positive 5 and very few points below negative 5. This is evidence that our model does not fit. We can further check the fit by checking the chi squared statistic of the deviance:
+
+```{r}
+
+pchisq(reg.1a$deviance, df=reg.1a$df.residual, lower.tail=FALSE)
+
+```
+
+Due to rounding, we get a zero probability. This means that there is evidence for overdispersion.  
+
+##1b.)
+
+Next, we run the model including sex, initial HIV status, and initial unprotected sex acts: 
+
+
+```{r}
+
+attach(risky)
+
+reg.1b = glm(fupacts ~ couples + women_alone + sex + bs_hiv + bupacts, family = poisson)
+
+sjt.glm(reg.1b)
+
+detach(risky)
+
+```
+
+The above regression results show that all variables are significant. The interpretations for the factor variables are similar to part 1a. The interpretation for the continuous bupacts variable: for every 1 initial unprotected sex act, the relative risk of having unprotected sex increases by 1%. 
+
+We also check the fit of this regression.
+
+First, we look at the residuals:
+
+```{r}
+
+plot(resid(reg.1b))
+
+```
+
+We see again that the residuals are not randomly scattered about the zero line. The spread of the positive residuals is higher than the spread of the negative ones. 
+
+We also check the fit using the chi squared statistic of the deviance:
+
+```{r}
+
+pchisq(reg.1b$deviance, df=reg.1b$df.residual, lower.tail=FALSE)
+
+```
+
+Again, this probability is zero due to rounding. This means that there is evidence for overdispersion.  
+
+##1c.)
+
+Since our first two models have evidence of overdispersion, we run the model using a quasi poisson:
+
+```{r}
+
+attach(risky)
+
+reg.1c = glm(fupacts ~ couples + women_alone + sex + bs_hiv + bupacts, family = quasipoisson)
+
+sjt.glm(reg.1c)
+
+detach(risky)
+
+```
+
+```{r}
+
+plot(resid(reg.1c))
+
+```
+
