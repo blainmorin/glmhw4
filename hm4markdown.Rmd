@@ -1,20 +1,24 @@
 ---
 title: "PHP 2514 HW 4"
 author: "Blain Morin"
-date: "April 3, 2018"
-output: html_document
+date: "April 9, 2018"
+output: 
+  html_document:
+    theme: journal
 ---
 
 #Question 1
 
 ##1a.)
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, include=FALSE}
 
 ###Import data and change the sex, couples, women_alone to factors
 
+library(knitr)
 library(readr)
 library(MASS)
+library(sjPlot)
 
 risky = read_csv("risky_behaviors.csv")
 
@@ -31,27 +35,26 @@ We start by regressing follow-up acts on the treatment groups:
 
 ```{r}
 
-library(sjPlot)
-
 ###Poisson regression with women only
 
 attach(risky)
 
 reg.1a = glm(fupacts ~ couples + women_alone, family = poisson)
 
-sjt.glm(reg.1a)
-
 detach(risky)
+
+sjt.glm(reg.1a)
 
 ```
 
+<br> <br>
 The regression results above display the incident rate ratios for the treatment groups. Compared to the control group, couples that recieved conseling had .72 times the risk of having unprotected sex. Moreover, when women alone recieved counseling, couples had .56 the risk of having unprotected sex compared to the control group. Both groups were significant at the .05 level. 
 
 Next, we check the model fit.
 
 First, we examine the residual plot:
 
-```{r}
+```{r, echo = FALSE}
 
 plot(resid(reg.1a))
 
@@ -78,11 +81,11 @@ attach(risky)
 
 reg.1b = glm(fupacts ~ couples + women_alone + sex + bs_hiv + bupacts, family = poisson)
 
-sjt.glm(reg.1b)
-
 detach(risky)
 
+sjt.glm(reg.1b)
 ```
+<br><br>
 
 The above regression results show that all variables are significant. The interpretations for the factor variables are similar to part 1a. The interpretation for the continuous bupacts variable: for every 1 initial unprotected sex act, the relative risk of having unprotected sex increases by 1%. 
 
@@ -90,7 +93,7 @@ We also check the fit of this regression.
 
 First, we look at the residuals:
 
-```{r}
+```{r, echo = FALSE}
 
 plot(resid(reg.1b))
 
@@ -118,17 +121,13 @@ attach(risky)
 
 reg.1c = glm(fupacts ~ couples + women_alone + sex + bs_hiv + bupacts, family = quasipoisson)
 
-sjt.glm(reg.1c)
-
 detach(risky)
 
-```
-
-```{r}
-
-plot(resid(reg.1c))
+sjt.glm(reg.1c)
 
 ```
+<br><br>
+We see that the confidence intervals are wider in the quasipoisson model. However, the betas for the treatment groups (couples and women alone) maintain significance. Therefore, there is evidence to suggest that the treatment decreases the risk of unprotected sex acts. 
 
 
 
@@ -138,21 +137,17 @@ plot(resid(reg.1c))
 Since the data includes responses from both members of the couple, the observations are thus not independent. This violates our model assumptions. 
 
 
+# Question 2
+
+![](2a.png)
+![](2b.png)
+
 
 #Question 3
 
-```{r}
+```{r, message=FALSE}
 library(MASS)
 library(dplyr)
-
-
-### First convert our data to a model matrix
-### Predictor Matrix
-x.risky = model.matrix(reg.1a)
-
-
-### Outcome Matrix
-y.risky = risky [,7]
 
 
 ### Function to calculate beta
@@ -187,10 +182,24 @@ itls = function(x, y, tolerance = .0000000000001) {
   
 }
 
-cbind(our_function = itls(x.risky, y.risky), poisson = coef(reg.1a))
 
+### Convert our data to a model matrix
+### Predictor Matrix
+x.risky = model.matrix(reg.1a)
+
+
+### Outcome Matrix
+y.risky = risky [,7]
+
+### Put our data into the function
+result = as.data.frame(cbind(our_function = itls(x.risky, y.risky), coef_from_part1 = coef(reg.1a)))
+names(result)[1] = "coef_from_our_function"
+
+
+### Create result table
+kable(result)
 
 ```
 
-
+Our function returns the same results as the glm call in part 1. 
 
