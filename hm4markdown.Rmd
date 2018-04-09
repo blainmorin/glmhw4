@@ -13,6 +13,9 @@ output: html_document
 
 ###Import data and change the sex, couples, women_alone to factors
 
+library(readr)
+library(MASS)
+
 risky = read_csv("risky_behaviors.csv")
 
 risky$sex = factor(risky$sex)
@@ -126,4 +129,68 @@ detach(risky)
 plot(resid(reg.1c))
 
 ```
+
+
+
+
+##d.)
+
+Since the data includes responses from both members of the couple, the observations are thus not independent. This violates our model assumptions. 
+
+
+
+#Question 3
+
+```{r}
+library(MASS)
+library(dplyr)
+
+
+### First convert our data to a model matrix
+### Predictor Matrix
+x.risky = model.matrix(reg.1a)
+
+
+### Outcome Matrix
+y.risky = risky [,7]
+
+
+### Function to calculate beta
+itls = function(x, y, tolerance = .0000000000001) {
+  
+  ### Initiate beta vector
+  beta = rep(1, ncol(x))
+  
+  ### Initiate delta
+  delta = 100
+  
+  ### Iterate until beta doesn't change
+  
+  while (abs(delta) > tolerance) {
+    
+    eta = x %*% beta 
+    mu =  exp(eta)
+    theta = log(mu)
+    v = exp(theta)
+    w = ginv(v *((1/mu)^2))
+    z = eta + (y-mu) * (1/mu)
+    z = z[1]
+    new.beta = ginv(t(x) %*% diag(as.vector(w)) %*% x) %*% t(x) %*% diag(as.vector(w)) %*% as.matrix(z)
+    
+    
+    delta = sum(new.beta - beta)
+    beta = new.beta
+    
+  }
+  
+  beta
+  
+}
+
+cbind(our_function = itls(x.risky, y.risky), poisson = coef(reg.1a))
+
+
+```
+
+
 
